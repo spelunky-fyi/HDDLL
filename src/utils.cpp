@@ -1,11 +1,14 @@
 
-#include "utils.h"
+#include "hddll/utils.h"
 
 #include <algorithm>
 #include <format>
 
-#include "hddll.h"
-#include "hd.h"
+#include "hddll/hd.h"
+#include "hddll/hddll.h"
+
+
+namespace hddll {
 
 std::vector<std::string> split(const std::string &str, char delim) {
   std::vector<std::string> strings;
@@ -78,3 +81,5 @@ TextureDefinition *getTextureById(int32_t texture_id) {
   }
   return NULL;
 }
+
+} // namespace hddll

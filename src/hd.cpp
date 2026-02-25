@@ -3,7 +3,9 @@
 
 #include <imgui.h>
 
-#include "hd.h"
+#include "hddll/hd.h"
+
+namespace hddll {
 
 // GlobalState
 DWORD gSpawnEntityOffset;
@@ -717,3 +719,5 @@ CharacterIndex TextureIdToCharId(TextureId id) {
   }
   return (CharacterIndex)new_id;
 }
+
+} // namespace hddll

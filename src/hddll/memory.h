@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+namespace hddll {
+
 enum FORCE_PATCH_TYPE : int32_t {
   FORCE_PATCH_TYPE_NORMAL = 0,
   FORCE_PATCH_TYPE_ALWAYS = 1,
@@ -41,3 +43,5 @@ void applyPatches(std::vector<Patch> &patches, bool rollback = false);
 bool hook(void *toHook, void *ourFunc, int len);
 bool unhook(void *toHook);
 void cleanUpHooks();
+
+} // namespace hddll

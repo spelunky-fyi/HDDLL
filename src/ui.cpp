@@ -1,12 +1,13 @@
-#include "ui.h"
+#include "hddll/ui.h"
 
+#include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
-#include <imgui.h>
+
 
 #include <stdexcept>
 
-#include "hddll.h"
+#include "hddll/hddll.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window,
                                                              UINT message,
@@ -16,13 +17,15 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window,
 LRESULT CALLBACK WindowProcess(HWND window, UINT message, WPARAM wideParam,
                                LPARAM longParam);
 
+namespace hddll {
+
 bool ui::SetupWindowClass(const char *windowClassName) noexcept {
-  windowClass.cbSize = sizeof(WNDCLASSEX);
+  windowClass.cbSize = sizeof(WNDCLASSEXA);
   windowClass.style = CS_HREDRAW | CS_VREDRAW;
-  windowClass.lpfnWndProc = DefWindowProc;
+  windowClass.lpfnWndProc = DefWindowProcA;
   windowClass.cbClsExtra = 0;
   windowClass.cbWndExtra = 0;
-  windowClass.hInstance = GetModuleHandle(NULL);
+  windowClass.hInstance = GetModuleHandleA(NULL);
   windowClass.hIcon = NULL;
   windowClass.hCursor = NULL;
   windowClass.hbrBackground = NULL;
@@ -30,7 +33,7 @@ bool ui::SetupWindowClass(const char *windowClassName) noexcept {
   windowClass.lpszClassName = windowClassName;
   windowClass.hIconSm = NULL;
 
-  if (!RegisterClassEx(&windowClass)) {
+  if (!RegisterClassExA(&windowClass)) {
     return false;
   }
 
@@ -38,14 +41,14 @@ bool ui::SetupWindowClass(const char *windowClassName) noexcept {
 }
 
 void ui::DestroyWindowClass() noexcept {
-  UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
+  UnregisterClassA(windowClass.lpszClassName, windowClass.hInstance);
 }
 
 bool ui::SetupWindow(const char *windowName) noexcept {
   // Create temp window to get dx9 device
   window =
-      CreateWindow(windowClass.lpszClassName, windowName, WS_OVERLAPPEDWINDOW,
-                   0, 0, 100, 100, 0, 0, windowClass.hInstance, 0);
+      CreateWindowA(windowClass.lpszClassName, windowName, WS_OVERLAPPEDWINDOW,
+                    0, 0, 100, 100, 0, 0, windowClass.hInstance, 0);
   if (!window) {
     return false;
   }
@@ -59,7 +62,7 @@ void ui::DestroyWindow() noexcept {
 }
 
 bool ui::SetupDirectX() noexcept {
-  const auto handle = GetModuleHandle("d3d9.dll");
+  const auto handle = GetModuleHandleA("d3d9.dll");
 
   if (!handle) {
     return false;
@@ -147,7 +150,7 @@ void ui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {
   ImGui_ImplWin32_Init(window);
   ImGui_ImplDX9_Init(device);
 
-  hddllOnInit();
+  onInit();
 
   setup = true;
 }
@@ -160,7 +163,7 @@ void ui::Destroy() noexcept {
   SetWindowLongPtr(window, GWLP_WNDPROC,
                    reinterpret_cast<LONG_PTR>(originalWindowProcess));
 
-  hddllOnDestroy();
+  onDestroy();
 
   DestroyDirectX();
 }
@@ -171,12 +174,14 @@ void ui::Render() noexcept {
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
 
-  hddllOnFrame();
+  onFrame();
 
   ImGui::EndFrame();
   ImGui::Render();
   ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 }
+
+} // namespace hddll
 
 LRESULT CALLBACK WindowProcess(HWND window, UINT message, WPARAM wideParam,
                                LPARAM longParam) {
@@ -185,6 +190,6 @@ LRESULT CALLBACK WindowProcess(HWND window, UINT message, WPARAM wideParam,
     return 1L;
   }
 
-  return CallWindowProc(ui::originalWindowProcess, window, message, wideParam,
-                        longParam);
+  return CallWindowProc(hddll::ui::originalWindowProcess, window, message,
+                        wideParam, longParam);
 }

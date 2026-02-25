@@ -1,6 +1,13 @@
 #pragma once
 
 #include "hd.h"
+// Windows.h defines PlaySound as a macro (PlaySoundA/PlaySoundW) which
+// collides with Entity::PlaySound. Undefine it so the method name is preserved.
+#ifdef PlaySound
+#undef PlaySound
+#endif
+
+namespace hddll {
 
 enum class Ownership : int32_t {
   Unowned = -99,
@@ -756,3 +763,5 @@ public:
   int field24_0x2ac;
   int field25_0x2b0;
 };
+
+} // namespace hddll

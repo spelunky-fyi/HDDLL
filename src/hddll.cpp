@@ -1,13 +1,13 @@
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include "hddll/hddll.h"
 
 #include <cstdint>
 #include <thread>
 
-#include "hooks.h"
+#include "hddll/hooks.h"
+#include "hddll/ui.h"
 
-DWORD WINAPI MainThread(LPVOID instance) {
-
+static DWORD WINAPI MainThread(LPVOID instance) {
   srand(static_cast<unsigned int>(time(NULL)));
 
   try {
@@ -34,16 +34,15 @@ DIE:
   return 0;
 }
 
-BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved) {
+namespace hddll {
 
-  if (dwReason == DLL_PROCESS_ATTACH) {
-    DisableThreadLibraryCalls(hMod);
-    const auto thread = CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
-
-    if (thread) {
-      CloseHandle(thread);
-    }
+void Start(HMODULE instance) {
+  DisableThreadLibraryCalls(instance);
+  const auto thread =
+      CreateThread(nullptr, 0, MainThread, instance, 0, nullptr);
+  if (thread) {
+    CloseHandle(thread);
   }
-
-  return TRUE;
 }
+
+} // namespace hddll

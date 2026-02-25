@@ -13,15 +13,14 @@ if(DEV)
 endif()
 
 add_library(hddll STATIC
-    src/dllmain.cpp
-    src/ui.h src/ui.cpp
-    src/hooks.h src/hooks.cpp
-    src/memory.h src/memory.cpp
-    src/hd.h src/hd.cpp
-    src/hd_entity.h
-    src/entities.h
-    src/utils.h src/utils.cpp
-    src/hddll.h
+    src/hddll/hddll.h src/hddll.cpp
+    src/hddll/ui.h src/ui.cpp
+    src/hddll/hooks.h src/hooks.cpp
+    src/hddll/memory.h src/memory.cpp
+    src/hddll/hd.h src/hd.cpp
+    src/hddll/hd_entity.h
+    src/hddll/entities.h
+    src/hddll/utils.h src/utils.cpp
 )
 target_include_directories(hddll PUBLIC src)
 target_link_libraries(hddll PUBLIC imgui minhook)

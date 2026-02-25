@@ -1,13 +1,16 @@
-#include "hooks.h"
+#include "hddll/hooks.h"
 
 #include <intrin.h>
 #include <stdexcept>
 
 #include <MinHook.h>
 
+#include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
-#include <imgui.h>
+
+
+namespace hddll {
 
 void hooks::Setup() {
 
@@ -57,3 +60,5 @@ HRESULT __stdcall hooks::Reset(IDirect3DDevice9 *device,
   ImGui_ImplDX9_CreateDeviceObjects();
   return result;
 }
+
+} // namespace hddll

@@ -2,8 +2,12 @@
 
 #include <stdint.h>
 
-#include <Windows.h>
 #include "hd_entity.h"
+#include <Windows.h>
+// Windows.h defines PlaySound as a macro which collides with Entity::PlaySound.
+#undef PlaySound
+
+namespace hddll {
 
 constexpr size_t ENTITY_FLOORS_COUNT = 4692;
 
@@ -181,38 +185,38 @@ static_assert(sizeof(DeathmatchArea) == 0x10E4);
 
 class LevelState {
 public:
-  EntityBackground *entity_backgrounds[512]; // 0x0000
-  uint32_t entity_backgrounds_count;         // 0x0800
-  uint32_t unknown;                          // 0x0804
-  Entity *entity_items[720];                 // 0x0808
-  uint32_t entity_items_count;               // 0x1348
-  EntityFloor *entity_floors[ENTITY_FLOORS_COUNT];          // 0x134C
-  EntityFloor *entity_floors_bg[ENTITY_FLOORS_COUNT];       // 0x5C9C
-  uint32_t room_types[48];                   // 0xA5EC
-  DeathmatchArea deathmatch_areas[9];        // 0xA6AC
-  uint8_t unused[12972];                     // 0x13EB0
-  class GlobalState *global_state;           // 0x1715C
-  uint32_t shop_type;                        // 0x17160
-  uint32_t entrance_room_x;                  // 0x17164
-  uint32_t entrance_room_y;                  // 0x17168
-  uint32_t exit_room_x;                      // 0x1716C
-  uint32_t exit_room_y;                      // 0x17170
-  float dm_spawn_p1_x;                       // 0x17174
-  float dm_spawn_p1_y;                       // 0x17178
-  float dm_spawn_p2_x;                       // 0x1717C
-  float dm_spawn_p2_y;                       // 0x17180
-  float dm_spawn_p3_x;                       // 0x17184
-  float dm_spawn_p3_y;                       // 0x17188
-  float dm_spawn_p4_x;                       // 0x1718C
-  float dm_spawn_p4_y;                       // 0x17190
-  float entrance_x;                          // 0x17194
-  float entrance_y;                          // 0x17198
-  float exit_x;                              // 0x1719C
-  float exit_y;                              // 0x171A0
-  float alt_exit_x;                          // 0x171A4
-  float alt_exit_y;                          // 0x171A8
-  uint32_t dm_num_crates_spawned;            // 0x171AC
-};                                           // Size: 0x171B0
+  EntityBackground *entity_backgrounds[512];          // 0x0000
+  uint32_t entity_backgrounds_count;                  // 0x0800
+  uint32_t unknown;                                   // 0x0804
+  Entity *entity_items[720];                          // 0x0808
+  uint32_t entity_items_count;                        // 0x1348
+  EntityFloor *entity_floors[ENTITY_FLOORS_COUNT];    // 0x134C
+  EntityFloor *entity_floors_bg[ENTITY_FLOORS_COUNT]; // 0x5C9C
+  uint32_t room_types[48];                            // 0xA5EC
+  DeathmatchArea deathmatch_areas[9];                 // 0xA6AC
+  uint8_t unused[12972];                              // 0x13EB0
+  class GlobalState *global_state;                    // 0x1715C
+  uint32_t shop_type;                                 // 0x17160
+  uint32_t entrance_room_x;                           // 0x17164
+  uint32_t entrance_room_y;                           // 0x17168
+  uint32_t exit_room_x;                               // 0x1716C
+  uint32_t exit_room_y;                               // 0x17170
+  float dm_spawn_p1_x;                                // 0x17174
+  float dm_spawn_p1_y;                                // 0x17178
+  float dm_spawn_p2_x;                                // 0x1717C
+  float dm_spawn_p2_y;                                // 0x17180
+  float dm_spawn_p3_x;                                // 0x17184
+  float dm_spawn_p3_y;                                // 0x17188
+  float dm_spawn_p4_x;                                // 0x1718C
+  float dm_spawn_p4_y;                                // 0x17190
+  float entrance_x;                                   // 0x17194
+  float entrance_y;                                   // 0x17198
+  float exit_x;                                       // 0x1719C
+  float exit_y;                                       // 0x171A0
+  float alt_exit_x;                                   // 0x171A4
+  float alt_exit_y;                                   // 0x171A8
+  uint32_t dm_num_crates_spawned;                     // 0x171AC
+};                                                    // Size: 0x171B0
 static_assert(sizeof(LevelState) == 0x171B0);
 
 class EntityStruct {
@@ -409,3 +413,5 @@ uint32_t mersenne_random();
 
 void resetForRun(GlobalState *global_state, int isDeathmatch);
 void resetForLevel(GlobalState *global_state);
+
+} // namespace hddll

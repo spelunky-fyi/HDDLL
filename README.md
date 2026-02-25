@@ -4,7 +4,7 @@ A reusable C++ static library for building DLLs to inject into Spelunky HD. Prov
 
 ## What's Included
 
-- **DLL entry point** (`dllmain.cpp`) — thread setup and teardown
+- **DLL bootstrapping** (`hddll.h` / `hddll.cpp`) — `hddll::Start()` handles thread creation, DX9 hook setup, and teardown
 - **DirectX 9 hooks** (`hooks.cpp`) — EndScene/Reset hooking via MinHook
 - **ImGui overlay** (`ui.cpp`) — window class registration, device creation, ImGui init/render loop
 - **Memory patching** (`memory.cpp`) — code patching, byte hooks, force patches
@@ -19,15 +19,10 @@ A reusable C++ static library for building DLLs to inject into Spelunky HD. Prov
 
 ## Setup
 
-Clone with submodules:
+Add HDDLL as a git submodule in your project:
 
 ```
-git clone --recurse-submodules https://github.com/spelunky-fyi/HDDLL.git
-```
-
-Or if already cloned:
-
-```
+git submodule add https://github.com/spelunky-fyi/HDDLL.git path/to/HDDLL
 git submodule update --init --recursive
 ```
 
@@ -40,7 +35,7 @@ Add HDDLL as a subdirectory (or git submodule) in your mod project:
 ```cmake
 add_subdirectory(path/to/HDDLL)
 
-add_library(my_mod SHARED my_mod.cpp)
+add_library(my_mod SHARED dllmain.cpp my_mod.cpp)
 target_link_libraries(my_mod PRIVATE hddll)
 ```
 
@@ -51,36 +46,58 @@ cmake -B build -A Win32
 cmake --build build
 ```
 
-### 2. Implement the required callbacks
+### 2. Create your DLL entry point
 
-Your mod must define three callback functions and the global variable definitions that HDDLL expects. These are declared as `extern` in `hddll.h`:
+HDDLL provides `hddll::Start()` which handles thread creation, DirectX 9 hooking, ImGui initialization, and teardown. Your `dllmain.cpp` just needs to call it:
 
 ```cpp
-#include "hddll.h"
-#include "hd.h"
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
-// Global variable definitions
+#include <hddll/hddll.h>
+
+BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved) {
+  if (dwReason == DLL_PROCESS_ATTACH) {
+    hddll::Start(hMod);
+  }
+  return TRUE;
+}
+```
+
+> **Note:** `DllMain` must be defined in your project, not in the static library, because MSVC's linker won't pull `DllMain` from a static library — the CRT provides a default no-op.
+
+### 3. Implement the required callbacks
+
+Your mod must define three callback functions and the global variable definitions that HDDLL expects. These are declared as `extern` inside `namespace hddll` in `hddll.h`:
+
+```cpp
+#include <hddll/hddll.h>
+#include <hddll/hd.h>
+
+// Global variable definitions (inside namespace hddll)
+namespace hddll {
 DWORD gBaseAddress = 0;
 GlobalState *gGlobalState = nullptr;
 CameraState *gCameraState = nullptr;
 
 // Called once after ImGui is initialized
-void hddllOnInit() {
-    // Set up gBaseAddress, gGlobalState, gCameraState, etc.
+void onInit() {
+    // Set up hddll::gBaseAddress, hddll::gGlobalState, hddll::gCameraState, etc.
 }
 
 // Called every frame inside the ImGui render loop
-void hddllOnFrame() {
+void onFrame() {
     // Draw your ImGui UI here
 }
 
 // Called on teardown
-void hddllOnDestroy() {
+void onDestroy() {
     // Clean up
 }
+} // namespace hddll
 ```
 
-### 3. Inject the DLL
+### 4. Inject the DLL
 
 The build produces a `.dll` from your shared library target. Inject it into a running Spelunky HD process using any standard DLL injector.
 
@@ -98,24 +115,27 @@ cmake -B build -A Win32 -DDEV=ON
 
 The integration header. Include this in your mod to access the extern globals and see the callback signatures.
 
-| Symbol             | Description                                   |
-| ------------------ | --------------------------------------------- |
-| `gBaseAddress`     | Base address of the Spelunky HD module        |
-| `gGlobalState`     | Pointer to the game's `GlobalState`           |
-| `gCameraState`     | Pointer to the game's `CameraState`           |
-| `hddllOnInit()`    | Your callback — called once after ImGui setup |
-| `hddllOnFrame()`   | Your callback — called each frame             |
-| `hddllOnDestroy()` | Your callback — called on teardown            |
+All symbols live inside `namespace hddll`.
+
+| Symbol                  | Description                                          |
+| ----------------------- | ---------------------------------------------------- |
+| `hddll::Start()`        | Call from `DllMain` — sets up thread, hooks, and UI  |
+| `hddll::gBaseAddress`   | Base address of the Spelunky HD module               |
+| `hddll::gGlobalState`   | Pointer to the game's `GlobalState`                  |
+| `hddll::gCameraState`   | Pointer to the game's `CameraState`                  |
+| `hddll::onInit()`       | Your callback — called once after ImGui setup        |
+| `hddll::onFrame()`      | Your callback — called each frame                    |
+| `hddll::onDestroy()`    | Your callback — called on teardown                   |
 
 ### memory.h
 
-| Function                 | Description                                              |
-| ------------------------ | -------------------------------------------------------- |
-| `applyPatches()`         | Apply/rollback byte patches at offsets from base address |
-| `applyRelativePatches()` | Apply/rollback relative address patches                  |
-| `applyForcePatch()`      | Apply always/never/normal force patches                  |
-| `hook()` / `unhook()`    | Install/remove inline JMP hooks                          |
-| `cleanUpHooks()`         | Remove all installed inline hooks                        |
+| Function                          | Description                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| `hddll::applyPatches()`          | Apply/rollback byte patches at offsets from base address |
+| `hddll::applyRelativePatches()`  | Apply/rollback relative address patches                  |
+| `hddll::applyForcePatch()`       | Apply always/never/normal force patches                  |
+| `hddll::hook()` / `hddll::unhook()` | Install/remove inline JMP hooks                       |
+| `hddll::cleanUpHooks()`          | Remove all installed inline hooks                        |
 
 ### hd.h
 

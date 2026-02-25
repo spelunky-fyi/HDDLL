@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+namespace hddll {
+
 class TextureDefinition;
 
 std::vector<std::string> split(const std::string &str, char delim);
@@ -12,3 +14,5 @@ void ltrim(std::string &s);
 void rtrim(std::string &s);
 std::string formatLevel(uint8_t levelNumber);
 TextureDefinition *getTextureById(int32_t texture_id);
+
+} // namespace hddll

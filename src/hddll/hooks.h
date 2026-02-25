@@ -1,6 +1,7 @@
 #pragma once
 #include "ui.h"
 
+namespace hddll {
 namespace hooks {
 
 void Setup();
@@ -21,3 +22,4 @@ HRESULT __stdcall Reset(IDirect3DDevice9 *device,
                         D3DPRESENT_PARAMETERS *params) noexcept;
 
 } // namespace hooks
+} // namespace hddll

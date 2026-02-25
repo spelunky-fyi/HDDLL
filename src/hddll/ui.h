@@ -1,17 +1,15 @@
 #pragma once
 #include <d3d9.h>
 
+namespace hddll {
 namespace ui {
-
-// Show Menu
-inline bool open = true;
 
 // Is Menu Initialized
 inline bool setup = false;
 
 // Win API
 inline HWND window = nullptr;
-inline WNDCLASSEX windowClass = {};
+inline WNDCLASSEXA windowClass = {};
 inline WNDPROC originalWindowProcess = nullptr;
 
 // DX
@@ -35,3 +33,4 @@ void Destroy() noexcept;
 
 void Render() noexcept;
 } // namespace ui
+} // namespace hddll

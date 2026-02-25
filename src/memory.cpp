@@ -1,7 +1,9 @@
 
-#include "memory.h"
+#include "hddll/memory.h"
 
-#include "hddll.h"
+#include "hddll/hddll.h"
+
+namespace hddll {
 
 void patchReadOnlyCode(HANDLE process, DWORD addr, void *value, size_t size) {
   DWORD oldrights;
@@ -17,7 +19,8 @@ void applyForcePatch(ForcePatch &patch, FORCE_PATCH_TYPE type) {
   if (type == FORCE_PATCH_TYPE_NORMAL) {
     if (!patch.always.original.empty())
       patchReadOnlyCode(process, gBaseAddress + patch.always.offset,
-                        &patch.always.original[0], patch.always.original.size());
+                        &patch.always.original[0],
+                        patch.always.original.size());
     if (!patch.never.original.empty())
       patchReadOnlyCode(process, gBaseAddress + patch.never.offset,
                         &patch.never.original[0], patch.never.original.size());
@@ -31,7 +34,8 @@ void applyForcePatch(ForcePatch &patch, FORCE_PATCH_TYPE type) {
   } else if (type == FORCE_PATCH_TYPE_NEVER) {
     if (!patch.always.original.empty())
       patchReadOnlyCode(process, gBaseAddress + patch.always.offset,
-                        &patch.always.original[0], patch.always.original.size());
+                        &patch.always.original[0],
+                        patch.always.original.size());
     if (!patch.never.patch.empty())
       patchReadOnlyCode(process, gBaseAddress + patch.never.offset,
                         &patch.never.patch[0], patch.never.patch.size());
@@ -130,3 +134,5 @@ void cleanUpHooks() {
     gInstalledHooks.pop_back();
   }
 }
+
+} // namespace hddll

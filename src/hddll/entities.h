@@ -1,6 +1,8 @@
 #include <string>
 #include <vector>
 
+namespace hddll {
+
 const std::vector<std::pair<std::string, int>> gEntities = {
     {"None", -1},
     {"Player / Hired Hand", 0},
@@ -213,3 +215,5 @@ const std::vector<std::pair<std::string, int>> gEntities = {
     {"Locust Critter", 1067},
     {"Maggot Critter", 1068},
 };
+
+} // namespace hddll
