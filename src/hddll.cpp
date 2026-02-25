@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <thread>
 
+#include "hddll/hd.h"
 #include "hddll/hooks.h"
+#include "hddll/memory.h"
 #include "hddll/ui.h"
 
 static DWORD WINAPI MainThread(LPVOID instance) {
@@ -35,6 +37,40 @@ DIE:
 }
 
 namespace hddll {
+
+DWORD gBaseAddress = NULL;
+GlobalState *gGlobalState = NULL;
+CameraState *gCameraState = NULL;
+int gWindowedMode = 0;
+int gDisplayWidth = 0;
+int gDisplayHeight = 0;
+
+void init() {
+  gBaseAddress = (size_t)GetModuleHandleA(NULL);
+  setupOffsets(gBaseAddress);
+
+  auto process = GetCurrentProcess();
+
+  BYTE patch[] = {0x4a};
+  patchReadOnlyCode(process, gBaseAddress + 0x135B2A, patch, 1);
+
+  BYTE patch2[] = {0xF0};
+  patchReadOnlyCode(process, gBaseAddress + 0x1366C6, patch2, 1);
+}
+
+void updateState() {
+  gCameraState =
+      reinterpret_cast<CameraState *>(*((DWORD *)(gBaseAddress + 0x154510)));
+  gGlobalState =
+      reinterpret_cast<GlobalState *>(*((DWORD *)(gBaseAddress + 0x15446C)));
+
+  gWindowedMode = static_cast<int>(*((DWORD *)(gBaseAddress + 0x15a52c)));
+  gDisplayWidth = static_cast<int>(*((DWORD *)(gBaseAddress + 0x140a8c)));
+  gDisplayHeight = static_cast<int>(*((DWORD *)(gBaseAddress + 0x140a90)));
+
+  if (gGlobalState)
+    gGlobalState->N00001004 = 0; // 440629
+}
 
 void Start(HMODULE instance) {
   DisableThreadLibraryCalls(instance);

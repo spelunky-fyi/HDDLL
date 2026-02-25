@@ -7,6 +7,7 @@
 #include "hddll/hd.h"
 #include "hddll/hddll.h"
 
+#include <imgui.h>
 
 namespace hddll {
 
@@ -80,6 +81,31 @@ TextureDefinition *getTextureById(int32_t texture_id) {
     }
   }
   return NULL;
+}
+
+ImVec2 screenToGame(ImVec2 screen) {
+  if (gDisplayWidth == 0)
+    return {0, 0};
+
+  auto x =
+      (screen.x - ((float)gDisplayWidth / 2)) * (20 / (float)gDisplayWidth) +
+      gCameraState->camera_x;
+  auto y =
+      (screen.y - ((float)gDisplayHeight / 2)) * -(20 / (float)gDisplayWidth) +
+      gCameraState->camera_y;
+
+  return {x, y};
+}
+
+ImVec2 gameToScreen(ImVec2 game) {
+  if (gDisplayWidth == 0)
+    return {0, 0};
+
+  auto x = (game.x - gCameraState->camera_x) / (20 / (float)gDisplayWidth) +
+           ((float)gDisplayWidth / 2);
+  auto y = (game.y - gCameraState->camera_y) / -(20 / (float)gDisplayWidth) +
+           ((float)gDisplayHeight / 2);
+  return {x, y};
 }
 
 } // namespace hddll

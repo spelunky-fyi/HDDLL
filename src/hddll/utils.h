@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+struct ImVec2;
+
 namespace hddll {
 
 class TextureDefinition;
@@ -14,5 +16,9 @@ void ltrim(std::string &s);
 void rtrim(std::string &s);
 std::string formatLevel(uint8_t levelNumber);
 TextureDefinition *getTextureById(int32_t texture_id);
+
+// Coordinate conversion
+ImVec2 screenToGame(ImVec2 screen);
+ImVec2 gameToScreen(ImVec2 game);
 
 } // namespace hddll

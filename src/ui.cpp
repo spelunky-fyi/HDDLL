@@ -150,6 +150,7 @@ void ui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {
   ImGui_ImplWin32_Init(window);
   ImGui_ImplDX9_Init(device);
 
+  hddll::init();
   onInit();
 
   setup = true;
@@ -174,6 +175,7 @@ void ui::Render() noexcept {
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
 
+  hddll::updateState();
   onFrame();
 
   ImGui::EndFrame();
