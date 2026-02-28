@@ -133,7 +133,7 @@ public:
   float field18_0x174;
   float field19_0x178;
   float field20_0x17c;
-  float field21_0x180;
+  int stun_timer;
   float field22_0x184;
   float field23_0x188;
   float field24_0x18c;
@@ -193,7 +193,7 @@ public:
   char field78_0x20a;
   char field79_0x20b;
   char field80_0x20c;
-  char field81_0x20d;
+  char stunned;
   char field82_0x20e;
   char field83_0x20f;
   char field84_0x210;
