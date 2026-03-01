@@ -47,7 +47,7 @@ long __stdcall hooks::EndScene(IDirect3DDevice9 *device) noexcept {
     ui::SetupMenu(device);
   }
 
-  ui::Render();
+  ui::Render(device);
 
   return EndSceneOriginal(device, device);
 }

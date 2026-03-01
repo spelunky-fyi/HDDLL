@@ -169,10 +169,43 @@ void ui::Destroy() noexcept {
   DestroyDirectX();
 }
 
-void ui::Render() noexcept {
+void ui::Render(LPDIRECT3DDEVICE9 device) noexcept {
 
   ImGui_ImplDX9_NewFrame();
   ImGui_ImplWin32_NewFrame();
+
+  // Fix for borderless fullscreen: the window may be positioned at negative
+  // screen coordinates (e.g. -3, -14) so its borders are hidden off-screen.
+  // GetClientRect returns the oversized client area but the backbuffer matches
+  // the actual screen resolution. We shrink DisplaySize to the visible area
+  // for layout, then before RenderDrawData we shift DisplayPos/DisplaySize on
+  // the draw data so the backend's projection and scissor math naturally
+  // offsets all rendering into the visible portion of the backbuffer.
+  int offsetX = 0, offsetY = 0;
+  {
+    POINT clientOrigin = {0, 0};
+    ::ClientToScreen(window, &clientOrigin);
+    if (clientOrigin.x < 0)
+      offsetX = -clientOrigin.x;
+    if (clientOrigin.y < 0)
+      offsetY = -clientOrigin.y;
+
+    if (offsetX > 0 || offsetY > 0) {
+      IDirect3DSurface9 *bb = nullptr;
+      if (SUCCEEDED(
+              device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &bb))) {
+        D3DSURFACE_DESC desc;
+        if (SUCCEEDED(bb->GetDesc(&desc))) {
+          // Layout size = visible area (backbuffer minus the hidden offset)
+          ImGui::GetIO().DisplaySize =
+              ImVec2(static_cast<float>(desc.Width - offsetX),
+                     static_cast<float>(desc.Height - offsetY));
+        }
+        bb->Release();
+      }
+    }
+  }
+
   ImGui::NewFrame();
 
   hddll::updateState();
@@ -180,7 +213,20 @@ void ui::Render() noexcept {
 
   ImGui::EndFrame();
   ImGui::Render();
-  ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+
+  ImDrawData *drawData = ImGui::GetDrawData();
+  if ((offsetX > 0 || offsetY > 0) && drawData) {
+    // Shift DisplayPos negative so the backend's projection matrix and scissor
+    // rects place everything at (offsetX, offsetY) in the backbuffer, aligning
+    // with the first visible pixel on screen. Expand DisplaySize to the full
+    // backbuffer so the viewport covers it entirely.
+    drawData->DisplayPos.x = static_cast<float>(-offsetX);
+    drawData->DisplayPos.y = static_cast<float>(-offsetY);
+    drawData->DisplaySize.x += static_cast<float>(offsetX);
+    drawData->DisplaySize.y += static_cast<float>(offsetY);
+  }
+
+  ImGui_ImplDX9_RenderDrawData(drawData);
 }
 
 } // namespace hddll

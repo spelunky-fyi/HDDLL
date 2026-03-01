@@ -31,6 +31,6 @@ void Setup();
 void SetupMenu(LPDIRECT3DDEVICE9 device) noexcept;
 void Destroy() noexcept;
 
-void Render() noexcept;
+void Render(LPDIRECT3DDEVICE9 device) noexcept;
 } // namespace ui
 } // namespace hddll
