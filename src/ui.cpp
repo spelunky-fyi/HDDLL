@@ -150,6 +150,15 @@ void ui::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {
   ImGui_ImplWin32_Init(window);
   ImGui_ImplDX9_Init(device);
 
+  // Scale UI for high-DPI displays
+  float dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(window);
+  if (dpiScale > 1.0f) {
+    ImFontConfig fontCfg;
+    fontCfg.SizePixels = 13.0f * dpiScale;
+    ImGui::GetIO().Fonts->AddFontDefault(&fontCfg);
+    ImGui::GetStyle().ScaleAllSizes(dpiScale);
+  }
+
   hddll::init();
   onInit();
 
