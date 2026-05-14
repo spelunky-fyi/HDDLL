@@ -38,52 +38,84 @@ enum class EntityKind : int32_t {
 // ai_bot_execute_combat_action). Reading it back is the ground truth for "what
 // is the bot actually pressing right now".
 //
-// The action_N bytes are 1 while "held this frame"; prev_action_N hold the
-// previous frame's value so the engine can detect press/release edges.
-// left_right / up_down are the movement stick: -32 (0xFFE0), 0, or +32 (0x20).
+// Per-frame controller state for one player. Filled each frame by the engine's
+// input processor for human players, or written directly by AIBot for CPU
+// players / hired hands.
+//
+// The action_* bytes are 1 while the action is held this frame, 0 otherwise;
+// prev_action_* hold the previous frame's value so the engine can detect
+// press/release edges. left_right / up_down are the movement stick:
+// -32 (0xFFE0), 0, or +32 (0x20).
+//
+// IMPORTANT: the action *index* (the 0..9 ordering below) is FIXED -- it is the
+// XInput button slot and is NOT affected by key rebinding. Rebinding only
+// changes which physical key/pad button feeds a given index. The mapping was
+// verified against Spelunky.exe (controls_init + the XInput input path + the
+// jump.wav consumer in the EntityPlayer update vfunc):
+//
+//   index 0 jump   (pad A)     index 5 door   (pad RB)  purchase / enter door
+//   index 1 bomb   (pad B)     index 6 lt     (pad LT)  see note below
+//   index 2 whip   (pad X)     index 7 run    (pad RT)
+//   index 3 rope   (pad Y)     index 8 pause  (pad START)
+//   index 4 shoulder-l (pad LB)index 9 journal(pad BACK) map / journal
+//
+// index 6 (action_lt) is written from the gamepad left trigger every frame but
+// has NO consumer anywhere in the engine -- a dead / write-only slot. index 4
+// (action_shoulder_l) is confirmed as the LB slot; its exact in-game role is
+// less certain, hence the generic name.
 struct PlayerInput {
-  uint8_t action_0;       // 0x00  jump (observed)
-  uint8_t action_1;       // 0x01  directional/whip jump (observed)
-  uint8_t action_2;       // 0x02  bomb / use-item (observed)
-  uint8_t action_3;       // 0x03  rope (observed)
-  uint8_t action_4;       // 0x04
-  uint8_t action_5;       // 0x05
-  uint8_t prev_action_0;  // 0x06
-  uint8_t prev_action_1;  // 0x07
-  uint8_t prev_action_2;  // 0x08
-  uint8_t prev_action_3;  // 0x09
-  uint8_t prev_action_4;  // 0x0A
-  uint8_t prev_action_5;  // 0x0B
-  uint8_t action_6;       // 0x0C
-  uint8_t action_7;       // 0x0D  run (observed)
-  uint8_t prev_action_6;  // 0x0E
-  uint8_t prev_action_7;  // 0x0F
-  uint8_t action_8;       // 0x10
-  uint8_t action_9;       // 0x11
-  uint8_t prev_action_8;  // 0x12
-  uint8_t prev_action_9;  // 0x13
-  uint8_t unknown_14[4];  // 0x14
-  int32_t input_type;     // 0x18
-  int32_t left_right;     // 0x1C  -32 / 0 / +32
-  int32_t up_down;        // 0x20  -32 / 0 / +32
-  int32_t gamepad_whip;   // 0x24
-  int32_t gamepad_jump;   // 0x28
-  int32_t gamepad_bomb;   // 0x2C
-  int32_t gamepad_rope;   // 0x30
-  int32_t gamepad_run;    // 0x34
-  int32_t gamepad_purchase_door; // 0x38
-  int32_t unknown_3C[11]; // 0x3C
-  int32_t key_whip;       // 0x68
-  int32_t key_jump;       // 0x6C
-  int32_t key_bomb;       // 0x70
-  int32_t key_rope;       // 0x74
-  int32_t key_run;        // 0x78
-  int32_t key_purchase_door; // 0x7C
-  int32_t unknown_80[2];  // 0x80
-  int32_t key_up;         // 0x88
-  int32_t key_down;       // 0x8C
-  int32_t key_left;       // 0x90
-  int32_t key_right;      // 0x94
+  uint8_t action_jump;            // 0x00  index 0  (pad A)
+  uint8_t action_bomb;            // 0x01  index 1  (pad B)  use bomb / use item
+  uint8_t action_whip;            // 0x02  index 2  (pad X)  attack / throw held
+  uint8_t action_rope;            // 0x03  index 3  (pad Y)
+  uint8_t action_shoulder_l;      // 0x04  index 4  (pad LB)
+  uint8_t action_door;            // 0x05  index 5  (pad RB)  purchase / door
+  uint8_t prev_action_jump;       // 0x06
+  uint8_t prev_action_bomb;       // 0x07
+  uint8_t prev_action_whip;       // 0x08
+  uint8_t prev_action_rope;       // 0x09
+  uint8_t prev_action_shoulder_l; // 0x0A
+  uint8_t prev_action_door;       // 0x0B
+  uint8_t action_lt;              // 0x0C  index 6  (pad LT) -- set, never read
+  uint8_t action_run;             // 0x0D  index 7  (pad RT)
+  uint8_t prev_action_lt;         // 0x0E
+  uint8_t prev_action_run;        // 0x0F
+  uint8_t action_pause;           // 0x10  index 8  (pad START)
+  uint8_t action_journal;         // 0x11  index 9  (pad BACK)  map / journal
+  uint8_t prev_action_pause;      // 0x12
+  uint8_t prev_action_journal;    // 0x13
+  uint8_t unknown_14[4];          // 0x14
+  int32_t input_type;             // 0x18  1 = keyboard, 2 = gamepad / XInput
+  int32_t left_right;             // 0x1C  -32 / 0 / +32
+  int32_t up_down;                // 0x20  -32 / 0 / +32
+  // 0x24..0x38: NOT raw button codes. These are the rebind layer -- each named
+  // control stores the action *index* (0..9) it is bound to. controls_init
+  // defaults: whip->2, jump->0, bomb->1, rope->3, run->7, door->5. The engine
+  // resolves these via resolve_action_index() before touching the action_*
+  // bytes above. (A parallel gamepad copy lives elsewhere in the Controls
+  // struct; this block is the keyboard path.)
+  int32_t remap_whip;             // 0x24
+  int32_t remap_jump;             // 0x28
+  int32_t remap_bomb;             // 0x2C
+  int32_t remap_rope;             // 0x30
+  int32_t remap_run;              // 0x34
+  int32_t remap_purchase_door;    // 0x38
+  int32_t unknown_3C[11];         // 0x3C
+  // 0x68..0x7C: raw DirectInput keyboard scancodes for each control. These ARE
+  // what key rebinding edits. controls_init defaults: whip=0x2D 'X',
+  // jump=0x2C 'Z', bomb=0x1F 'S', rope=0x1E 'A', run=0x2A LShift,
+  // purchase_door=0x39 Space.
+  int32_t key_whip;               // 0x68
+  int32_t key_jump;               // 0x6C
+  int32_t key_bomb;               // 0x70
+  int32_t key_rope;               // 0x74
+  int32_t key_run;                // 0x78
+  int32_t key_purchase_door;      // 0x7C
+  int32_t unknown_80[2];          // 0x80
+  int32_t key_up;                 // 0x88
+  int32_t key_down;               // 0x8C
+  int32_t key_left;               // 0x90
+  int32_t key_right;              // 0x94
 };
 static_assert(sizeof(PlayerInput) == 0x98);
 
