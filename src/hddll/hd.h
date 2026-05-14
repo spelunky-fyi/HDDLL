@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "hd_aibot.h"
 #include "hd_entity.h"
 #include <Windows.h>
 // Windows.h defines PlaySound as a macro which collides with Entity::PlaySound.

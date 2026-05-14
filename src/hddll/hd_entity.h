@@ -9,6 +9,9 @@
 
 namespace hddll {
 
+// Defined in hd_aibot.h - drives hired-hand / CPU spelunkers.
+class AIBot;
+
 enum class Ownership : int32_t {
   Unowned = -99,
   HiredHand = -1,
@@ -28,6 +31,61 @@ enum class EntityKind : int32_t {
   KIND_BACKGROUND = 5,
   KIND_EXPLOSION = 6
 };
+
+// The per-frame controller state for a player. For human players it is filled
+// from the keyboard/gamepad; for hired hands / CPU players the AIBot writes it
+// every frame (see ai_bot_shift_input_state + ai_bot_walk_path /
+// ai_bot_execute_combat_action). Reading it back is the ground truth for "what
+// is the bot actually pressing right now".
+//
+// The action_N bytes are 1 while "held this frame"; prev_action_N hold the
+// previous frame's value so the engine can detect press/release edges.
+// left_right / up_down are the movement stick: -32 (0xFFE0), 0, or +32 (0x20).
+struct PlayerInput {
+  uint8_t action_0;       // 0x00  jump (observed)
+  uint8_t action_1;       // 0x01  directional/whip jump (observed)
+  uint8_t action_2;       // 0x02  bomb / use-item (observed)
+  uint8_t action_3;       // 0x03  rope (observed)
+  uint8_t action_4;       // 0x04
+  uint8_t action_5;       // 0x05
+  uint8_t prev_action_0;  // 0x06
+  uint8_t prev_action_1;  // 0x07
+  uint8_t prev_action_2;  // 0x08
+  uint8_t prev_action_3;  // 0x09
+  uint8_t prev_action_4;  // 0x0A
+  uint8_t prev_action_5;  // 0x0B
+  uint8_t action_6;       // 0x0C
+  uint8_t action_7;       // 0x0D  run (observed)
+  uint8_t prev_action_6;  // 0x0E
+  uint8_t prev_action_7;  // 0x0F
+  uint8_t action_8;       // 0x10
+  uint8_t action_9;       // 0x11
+  uint8_t prev_action_8;  // 0x12
+  uint8_t prev_action_9;  // 0x13
+  uint8_t unknown_14[4];  // 0x14
+  int32_t input_type;     // 0x18
+  int32_t left_right;     // 0x1C  -32 / 0 / +32
+  int32_t up_down;        // 0x20  -32 / 0 / +32
+  int32_t gamepad_whip;   // 0x24
+  int32_t gamepad_jump;   // 0x28
+  int32_t gamepad_bomb;   // 0x2C
+  int32_t gamepad_rope;   // 0x30
+  int32_t gamepad_run;    // 0x34
+  int32_t gamepad_purchase_door; // 0x38
+  int32_t unknown_3C[11]; // 0x3C
+  int32_t key_whip;       // 0x68
+  int32_t key_jump;       // 0x6C
+  int32_t key_bomb;       // 0x70
+  int32_t key_rope;       // 0x74
+  int32_t key_run;        // 0x78
+  int32_t key_purchase_door; // 0x7C
+  int32_t unknown_80[2];  // 0x80
+  int32_t key_up;         // 0x88
+  int32_t key_down;       // 0x8C
+  int32_t key_left;       // 0x90
+  int32_t key_right;      // 0x94
+};
+static_assert(sizeof(PlayerInput) == 0x98);
 
 class Entity {
 public:
@@ -161,10 +219,10 @@ public:
   class TextureDefinition *field46_0x1e4;
   int field47_0x1e8;
   char field48_0x1ec;
-  char field49_0x1ed;
+  char field49_0x1ed; // collidable/"real" - AIBot scan_world ignores entity if 0
   char field50_0x1ee;
   char field51_0x1ef;
-  char field52_0x1f0;
+  char field52_0x1f0; // when != 0 the AIBot suspends combat/target/walk for this frame
   char field53_0x1f1;
   char field54_0x1f2;
   char field55_0x1f3;
@@ -180,12 +238,12 @@ public:
   char field65_0x1fd;
   char field66_0x1fe;
   char no_gravity;
-  char field68_0x200;
+  char field68_0x200; // AIBot movement gate (climb/ladder state - see ai_bot_walk_path)
   char field69_0x201;
   char field70_0x202;
-  char field71_0x203;
+  char field71_0x203; // AIBot movement gate (hanging/ledge state - see ai_bot_walk_path)
   char field72_0x204;
-  char field73_0x205;
+  char field73_0x205; // AIBot movement gate (on-rope state - see ai_bot_walk_path)
   char field74_0x206;
   char field75_0x207;
   char field76_0x208;
@@ -209,7 +267,7 @@ public:
   char field94_0x21a;
   char field95_0x21b;
   int field96_0x21c;
-  int field97_0x220;
+  PlayerInput *pPlayer_input; // 0x220 the controller state; AIBot writes this every frame
   int field98_0x224;
   int field99_0x228;
   class EntityActive *holder_entity;
@@ -752,7 +810,8 @@ public:
   class PlayerData *player_data;
   EntityPlayer *follower;
   EntityPlayer *following;
-  int *ai_bot;
+  // Non-null for hired hands / CPU players. See hd_aibot.h.
+  AIBot *ai_bot;
   int field17_0x290;
   int field18_0x294;
   int field19_0x298;
