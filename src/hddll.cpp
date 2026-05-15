@@ -44,6 +44,8 @@ CameraState *gCameraState = NULL;
 int gWindowedMode = 0;
 int gDisplayWidth = 0;
 int gDisplayHeight = 0;
+float *gProjectionMatrix = NULL;
+float gViewScale = 1.0f;
 
 void init() {
   gBaseAddress = (size_t)GetModuleHandleA(NULL);
@@ -67,6 +69,10 @@ void updateState() {
   gWindowedMode = static_cast<int>(*((DWORD *)(gBaseAddress + 0x15a52c)));
   gDisplayWidth = static_cast<int>(*((DWORD *)(gBaseAddress + 0x140a8c)));
   gDisplayHeight = static_cast<int>(*((DWORD *)(gBaseAddress + 0x140a90)));
+
+  // Orthographic projection matrix (D3DXMATRIX float[16]). Ghidra symbol
+  // g_flOrthoProjectionMatrix @ 0x0035a5b8 -> base-relative 0x15a5b8.
+  gProjectionMatrix = reinterpret_cast<float *>(gBaseAddress + 0x15a5b8);
 
   if (gGlobalState)
     gGlobalState->N00001004 = 0; // 440629

@@ -83,16 +83,20 @@ TextureDefinition *getTextureById(int32_t texture_id) {
   return NULL;
 }
 
+// Tiles visible across the viewport. The game natively shows 20 tiles wide;
+// gViewScale tracks any zoom applied to the projection so overlay coordinates
+// stay aligned with the rendered world.
+static float tilesAcross() { return 20.0f * gViewScale; }
+
 ImVec2 screenToGame(ImVec2 screen) {
   if (gDisplayWidth == 0)
     return {0, 0};
 
-  auto x =
-      (screen.x - ((float)gDisplayWidth / 2)) * (20 / (float)gDisplayWidth) +
-      gCameraState->camera_x;
-  auto y =
-      (screen.y - ((float)gDisplayHeight / 2)) * -(20 / (float)gDisplayWidth) +
-      gCameraState->camera_y;
+  const float scale = tilesAcross() / (float)gDisplayWidth;
+  auto x = (screen.x - ((float)gDisplayWidth / 2)) * scale +
+           gCameraState->camera_x;
+  auto y = (screen.y - ((float)gDisplayHeight / 2)) * -scale +
+           gCameraState->camera_y;
 
   return {x, y};
 }
@@ -101,9 +105,10 @@ ImVec2 gameToScreen(ImVec2 game) {
   if (gDisplayWidth == 0)
     return {0, 0};
 
-  auto x = (game.x - gCameraState->camera_x) / (20 / (float)gDisplayWidth) +
+  const float scale = tilesAcross() / (float)gDisplayWidth;
+  auto x = (game.x - gCameraState->camera_x) / scale +
            ((float)gDisplayWidth / 2);
-  auto y = (game.y - gCameraState->camera_y) / -(20 / (float)gDisplayWidth) +
+  auto y = (game.y - gCameraState->camera_y) / -scale +
            ((float)gDisplayHeight / 2);
   return {x, y};
 }
